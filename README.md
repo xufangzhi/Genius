@@ -1,2 +1,3 @@
 # Genius
-A Generalizable and Purely Unsupervised Self-Training Framework
+Genius: A Generalizable and Purely Unsupervised Self-Training Framework
+
