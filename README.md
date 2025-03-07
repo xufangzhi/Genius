@@ -23,52 +23,30 @@ Repo for "<a href="https://arxiv.org/abs/2311.09278" target="_blank">Genius: A G
 
 ## 🔥 News
 
-- [2025/02/16] 🔥🔥🔥 Genius is submitted to ACL ARR Feb. 2025 !
+- [2025/02/16] 🔥🔥🔥 Genius is under review !
 
 
 ## 🚀 Quick Start
 
-To try on Symbol-LLM, please use the Transformer library:
+To implement the *foresight sampling*, you can use the following command
 
 ```python
-# Load model directly
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
-tokenizer = AutoTokenizer.from_pretrained("Symbol-LLM/Symbol-LLM-7B-Instruct")
-model = AutoModelForCausalLM.from_pretrained("Symbol-LLM/Symbol-LLM-7B-Instruct")
+# execute
+python xxx.py
 ```
 
-
-To utilize our symbolic collection, please load the dataset:
+To train the 
 
 ```python
-from datasets import load_dataset
-
-# If the dataset is gated/private, make sure you have run huggingface-cli login
-dataset = load_dataset("Symbol-LLM/Symbolic_Collection")
+# execute
+python xxx.py
 ```
 
-## 📃 Deployed As A WebUI
-The implementation of WebUI is modified from [text-generation-webui](https://github.com/oobabooga/text-generation-webui). The running script is as follows:
-
-```bash
-cd demo-webui/
-python server.py --model <model_name> --api --share --gpu-memory 40 40 --compute_dtype float32 --bf16
-```
 
 
 ## 📒 Note
-This work is still under review. We will open-source the model weights, symbolic collection and the code.
+This work is still under review. We will open-source the model weights and the code.
 
-
-## 🔧 Repo Structure
-This repo contains the training scripts and the demo deployment. Detailed structure is as follow:
-```
-.
-├── README.md
-├── logo.png
-├── demo-webui
-```
 
 ## Citation
 If you find it helpful, please kindly cite the paper.
