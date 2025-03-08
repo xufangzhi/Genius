@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="./assets/logo.png" width="100" alt="Symbol-LLM" />
+<img src="./assets/logo.png" width="100" alt="Genius" />
 <br>
 Genius: A Generalizable and Purely Unsupervised Self-Training Framework For Advanced Reasoning
 </h1>
