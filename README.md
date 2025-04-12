@@ -49,12 +49,13 @@ This work is still under review. We will open-source the model weights and the c
 
 
 ## Citation
-If you find it helpful, please kindly cite the paper.
+If you find it helpful, please kindly cite our paper as well as the inference-time decoding algorithm $\phi$-Decoding:
+
 ```
-@article{xu2023symbol,
-  title={Symbol-LLM: Towards Foundational Symbol-centric Interface For Large Language Models},
-  author={Xu, Fangzhi and Wu, Zhiyong and Sun, Qiushi and Ren, Siyu and Yuan, Fei and Yuan, Shuai and Lin, Qika and Qiao, Yu and Liu, Jun},
-  journal={arXiv preprint arXiv:2311.09278},
-  year={2023}
+@article{xu2025phi,
+  title={$\phi$-Decoding: Adaptive Foresight Sampling for Balanced Inference-Time Exploration and Exploitation},
+  author={Xu, Fangzhi and Yan, Hang and Ma, Chang and Zhao, Haiteng and Liu, Jun and Lin, Qika and Wu, Zhiyong},
+  journal={arXiv preprint arXiv:2503.13288},
+  year={2025}
 }
 ```
