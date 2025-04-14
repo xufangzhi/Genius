@@ -27,7 +27,7 @@ Repo for "<a href="https://arxiv.org/abs/2311.09278" target="_blank">Genius: A G
 
 ## 🚀 Quick Start
 
-To implement the *foresight sampling*, you can use the following command
+<!-- To implement the *foresight sampling*, you can use the following command
 
 ```python
 # execute
@@ -39,8 +39,9 @@ To train the
 ```python
 # execute
 python xxx.py
-```
+``` -->
 
+Stay tuned on the recent updates !
 
 
 ## 📒 Note
@@ -49,6 +50,15 @@ This work is still under review. We will open-source the model weights and the c
 
 ## Citation
 If you find it helpful, please kindly cite our paper as well as the inference-time decoding algorithm $\phi$-Decoding:
+
+```
+@article{xu2025genius,
+  title={Genius: A Generalizable and Purely Unsupervised Self-Training Framework For Advanced Reasoning},
+  author={Xu, Fangzhi and Yan, Hang and Ma, Chang and Zhao, Haiteng and Sun, Qiushi and Cheng, Kanzhi and He, Junxian and Liu, Jun and Wu, Zhiyong},
+  journal={arXiv preprint arXiv:2504.08672},
+  year={2025}
+}
+```
 
 ```
 @article{xu2025phi,
