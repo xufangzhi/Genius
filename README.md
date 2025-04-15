@@ -26,6 +26,8 @@ Repo for "<a href="https://arxiv.org/abs/2311.09278" target="_blank">Genius: A G
 
 ## 🔍 Core Implementation
 
+The core implementation of Advantage Calibrated Optimization (ACO) loss function is presented below:
+
 ```python
 import torch
 import torch.nn.functional as F
