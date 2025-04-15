@@ -100,13 +100,11 @@ def aco_loss(
     )
     rejected_logratios_weighted = adjustment_factor * rejected_logratios
 
-    # Final logit difference
     logits = chosen_logratios - rejected_logratios_weighted
 
     # Compute loss
     losses = -F.logsigmoid(beta * logits)
 
-    # Rewards (detached for logging/analysis)
     chosen_rewards = beta * chosen_logratios.detach()
     rejected_rewards = beta * rejected_logratios.detach()
 
