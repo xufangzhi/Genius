@@ -8,7 +8,7 @@ Genius: A Generalizable and Purely Unsupervised Self-Training Framework For Adva
 
 <p align="center">
   <a href="https://arxiv.org/abs/2504.08672"><b>[📜 Paper]</b></a> •
-  <a href="https://huggingface.co/Symbol-LLM/Symbol-LLM-7B-Instruct"><b>[🤗 HF Models]</b></a> •
+  <a href="https://huggingface.co/collections/xufangzhi/genius-67b6be9b65ac174668739270"><b>[🤗 HF Models]</b></a> •
   <a href="https://github.com/xufangzhi/Genius"><b>[🐱 GitHub]</b></a>
   
 </p>
@@ -95,13 +95,21 @@ def aco_loss(
 To implement the *foresight re-sampling*, you can first use the following command to conduct the stepwise self-exploration:
 
 ```python
-python foresight-sampling/foresight_sampling_with_vllm.py --model_path <path_to_your_model> --data_path <path_to_your_queries> --output_path <path_to_your_output_file> --step_beam_size 2 --num_rollout 4 --num_foresight 4
+python foresight-sampling/foresight_sampling_with_vllm.py \
+  --model_path <path_to_your_model> \
+  --data_path <path_to_your_queries> \
+  --output_path <path_to_your_output_file> \
+  --step_beam_size 2 \
+  --num_rollout 4 \
+  --num_foresight 4
 ```
 
 After exploration, you can exploit and construct the preference data through resampling technique:
 
 ```python
-python foresight-sampling/construct_foresight_preference_data.py --input_path <path_to_the_exploration_outputs> --output_path <path_to_output_data_file>
+python foresight-sampling/construct_foresight_preference_data.py \
+  --input_path <path_to_the_exploration_outputs> \
+  --output_path <path_to_output_data_file>
 ```
 
 To train the policy model with Advantage Calibrated Optimization (ACO) loss function, please refer to the following command:
