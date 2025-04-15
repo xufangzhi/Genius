@@ -47,237 +47,68 @@ def dpo_loss(policy_chosen_logps: torch.FloatTensor,
     return losses, chosen_rewards, rejected_rewards
 
 
-def advantage_weighted_rejectratio_with_average_dpo_loss(policy_chosen_logps: torch.FloatTensor,
-             policy_rejected_logps: torch.FloatTensor,
-             reference_chosen_logps: torch.FloatTensor,
-             reference_rejected_logps: torch.FloatTensor,
-             chosen_weights,
-             rejected_weights,
-             average_weights,
-             beta: float,
-             reference_free: bool = False) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-    """Compute the DPO loss for a batch of policy and reference model log probabilities.
-    
+import torch
+import torch.nn.functional as F
+from typing import Tuple
+
+def aco_loss(
+    policy_chosen_logps: torch.FloatTensor,
+    policy_rejected_logps: torch.FloatTensor,
+    reference_chosen_logps: torch.FloatTensor,
+    reference_rejected_logps: torch.FloatTensor,
+    chosen_weights: torch.FloatTensor,
+    rejected_weights: torch.FloatTensor,
+    average_weights: torch.FloatTensor,
+    beta: float,
+    alpha: float = 1.0,
+    reference_free: bool = False
+) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+    """
+    Compute the ACO (Adaptive Comparison Optimization) loss for a batch of policy and reference model log probabilities.
+
     Args:
-        policy_chosen_logps: Log probabilities of the policy model for the chosen responses. Shape: (batch_size,)
-        policy_rejected_logps: Log probabilities of the policy model for the rejected responses. Shape: (batch_size,)
-        reference_chosen_logps: Log probabilities of the reference model for the chosen responses. Shape: (batch_size,)
-        reference_rejected_logps: Log probabilities of the reference model for the rejected responses. Shape: (batch_size,)
-        beta: Temperature parameter for the DPO loss, typically something in the range of 0.1 to 0.5. We ignore the reference model as beta -> 0.
-        reference_free: If True, we ignore the _provided_ reference model and implicitly use a reference model that assigns equal probability to all responses.
+        policy_chosen_logps (FloatTensor): Log-probabilities from the policy model for the chosen responses. Shape: (batch_size,)
+        policy_rejected_logps (FloatTensor): Log-probabilities from the policy model for the rejected responses. Shape: (batch_size,)
+        reference_chosen_logps (FloatTensor): Log-probabilities from the reference model for the chosen responses. Shape: (batch_size,)
+        reference_rejected_logps (FloatTensor): Log-probabilities from the reference model for the rejected responses. Shape: (batch_size,)
+        chosen_weights (FloatTensor): Weights for chosen responses, typically representing preference confidence.
+        rejected_weights (FloatTensor): Weights for rejected responses, typically representing preference confidence.
+        average_weights (FloatTensor): Average weights across comparisons (not used in this implementation).
+        beta (float): Temperature parameter; scales the sharpness of the preference.
+        alpha (float): Hyper-parameter to control the scale of the relaxation term.
+        reference_free (bool): If True, the reference model is assumed uniform (i.e., ignored).
 
     Returns:
-        A tuple of three tensors: (losses, chosen_rewards, rejected_rewards).
-        The losses tensor contains the DPO loss for each example in the batch.
-        The chosen_rewards and rejected_rewards tensors contain the rewards for the chosen and rejected responses, respectively.
+        Tuple[FloatTensor, FloatTensor, FloatTensor]: A tuple containing:
+            - losses: ACO loss for each example in the batch.
+            - chosen_rewards: Estimated reward signal for chosen responses.
+            - rejected_rewards: Estimated reward signal for rejected responses.
     """
-    pi_logratios = policy_chosen_logps - policy_rejected_logps
-    ref_logratios = reference_chosen_logps - reference_rejected_logps
 
+    if reference_free:
+        reference_chosen_logps = torch.zeros_like(policy_chosen_logps)
+        reference_rejected_logps = torch.zeros_like(policy_rejected_logps)
+
+    # Compute log-ratios between policy and reference
     chosen_logratios = policy_chosen_logps - reference_chosen_logps
     rejected_logratios = policy_rejected_logps - reference_rejected_logps
 
-    if reference_free:
-        ref_logratios = 0
+    # Adaptive weighting of rejected log-ratios
+    adjustment_factor = torch.max(
+        torch.tensor(1.0, device=chosen_logratios.device),
+        torch.exp(-(rejected_weights - chosen_weights) / alpha)
+    )
+    rejected_logratios_weighted = adjustment_factor * rejected_logratios
 
-    alpha1 = 1
-    # rejected_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (rejected_weights - chosen_weights))) * rejected_logratios
-    # rejected_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (rejected_weights - average_weights))) * rejected_logratios
-    # rejected_logratios_weighted = torch.max(torch.tensor(1.0), 0.5 + F.sigmoid(- (rejected_weights - average_weights))) * rejected_logratios
-    rejected_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (rejected_weights - chosen_weights) / alpha1 )) * rejected_logratios
-
+    # Final logit difference
     logits = chosen_logratios - rejected_logratios_weighted
 
-    chosen_logits_weighted = - F.logsigmoid(beta * logits)
-    # chosen_logits_weighted = - F.logsigmoid(beta * chosen_weights_normalized * logits)
+    # Compute loss
+    losses = -F.logsigmoid(beta * logits)
 
-    # rejected_logits_weighted = - rejected_weights_normalized * F.logsigmoid(beta * logits_reverse)
-    # losses = -F.logsigmoid(beta * logits)
-    # losses = chosen_logits_weighted + rejected_logits_weighted
-    losses = chosen_logits_weighted
-
-    chosen_rewards = beta * (policy_chosen_logps - reference_chosen_logps).detach()
-    rejected_rewards = beta * (policy_rejected_logps - reference_rejected_logps).detach()
-
-    return losses, chosen_rewards, rejected_rewards
-
-
-
-def advantage_weighted_chosenrejectratio_with_average_dpo_loss(policy_chosen_logps: torch.FloatTensor,
-             policy_rejected_logps: torch.FloatTensor,
-             reference_chosen_logps: torch.FloatTensor,
-             reference_rejected_logps: torch.FloatTensor,
-             chosen_weights,
-             rejected_weights,
-             average_weights,
-             beta: float,
-             reference_free: bool = False) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-    """Compute the DPO loss for a batch of policy and reference model log probabilities.
-    
-    Args:
-        policy_chosen_logps: Log probabilities of the policy model for the chosen responses. Shape: (batch_size,)
-        policy_rejected_logps: Log probabilities of the policy model for the rejected responses. Shape: (batch_size,)
-        reference_chosen_logps: Log probabilities of the reference model for the chosen responses. Shape: (batch_size,)
-        reference_rejected_logps: Log probabilities of the reference model for the rejected responses. Shape: (batch_size,)
-        beta: Temperature parameter for the DPO loss, typically something in the range of 0.1 to 0.5. We ignore the reference model as beta -> 0.
-        reference_free: If True, we ignore the _provided_ reference model and implicitly use a reference model that assigns equal probability to all responses.
-
-    Returns:
-        A tuple of three tensors: (losses, chosen_rewards, rejected_rewards).
-        The losses tensor contains the DPO loss for each example in the batch.
-        The chosen_rewards and rejected_rewards tensors contain the rewards for the chosen and rejected responses, respectively.
-    """
-    pi_logratios = policy_chosen_logps - policy_rejected_logps
-    ref_logratios = reference_chosen_logps - reference_rejected_logps
-
-    chosen_logratios = policy_chosen_logps - reference_chosen_logps
-    rejected_logratios = policy_rejected_logps - reference_rejected_logps
-
-    if reference_free:
-        ref_logratios = 0
-
-    alpha1, alpha2 = 4, 1
-
-    chosen_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (chosen_logratios - average_weights) / alpha1)) * chosen_logratios
-
-
-    # rejected_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (rejected_weights - chosen_weights))) * rejected_logratios
-    # rejected_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (rejected_weights - average_weights))) * rejected_logratios
-    rejected_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (rejected_weights - average_weights) / alpha2)) * rejected_logratios
-
-    logits = chosen_logratios_weighted - rejected_logratios_weighted
-
-    chosen_logits_weighted = - F.logsigmoid(beta * logits)
-    # chosen_logits_weighted = - F.logsigmoid(beta * chosen_weights_normalized * logits)
-
-    # rejected_logits_weighted = - rejected_weights_normalized * F.logsigmoid(beta * logits_reverse)
-    # losses = -F.logsigmoid(beta * logits)
-    # losses = chosen_logits_weighted + rejected_logits_weighted
-    losses = chosen_logits_weighted
-
-    chosen_rewards = beta * (policy_chosen_logps - reference_chosen_logps).detach()
-    rejected_rewards = beta * (policy_rejected_logps - reference_rejected_logps).detach()
-
-    return losses, chosen_rewards, rejected_rewards
-
-
-
-
-def advantage_weighted_rejectratio_dpo_loss(policy_chosen_logps: torch.FloatTensor,
-             policy_rejected_logps: torch.FloatTensor,
-             reference_chosen_logps: torch.FloatTensor,
-             reference_rejected_logps: torch.FloatTensor,
-             chosen_weights,
-             rejected_weights,
-             beta: float,
-             reference_free: bool = False) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-    """Compute the DPO loss for a batch of policy and reference model log probabilities.
-    
-    Args:
-        policy_chosen_logps: Log probabilities of the policy model for the chosen responses. Shape: (batch_size,)
-        policy_rejected_logps: Log probabilities of the policy model for the rejected responses. Shape: (batch_size,)
-        reference_chosen_logps: Log probabilities of the reference model for the chosen responses. Shape: (batch_size,)
-        reference_rejected_logps: Log probabilities of the reference model for the rejected responses. Shape: (batch_size,)
-        beta: Temperature parameter for the DPO loss, typically something in the range of 0.1 to 0.5. We ignore the reference model as beta -> 0.
-        reference_free: If True, we ignore the _provided_ reference model and implicitly use a reference model that assigns equal probability to all responses.
-
-    Returns:
-        A tuple of three tensors: (losses, chosen_rewards, rejected_rewards).
-        The losses tensor contains the DPO loss for each example in the batch.
-        The chosen_rewards and rejected_rewards tensors contain the rewards for the chosen and rejected responses, respectively.
-    """
-    pi_logratios = policy_chosen_logps - policy_rejected_logps
-    ref_logratios = reference_chosen_logps - reference_rejected_logps
-
-    chosen_logratios = policy_chosen_logps - reference_chosen_logps
-    rejected_logratios = policy_rejected_logps - reference_rejected_logps
-
-    if reference_free:
-        ref_logratios = 0
-
-    rejected_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (rejected_weights - chosen_weights))) * rejected_logratios
-    # rejected_logratios_weighted = torch.max(torch.tensor(1.0), torch.exp(- (rejected_weights - average_weights))) * rejected_logratios
-    # rejected_logratios_weighted = torch.max(torch.tensor(1.0), 0.5 + F.sigmoid(- (rejected_weights - chosen_weights))) * rejected_logratios
-
-    logits = chosen_logratios - rejected_logratios_weighted
-
-    chosen_logits_weighted = - F.logsigmoid(beta * logits)
-    # chosen_logits_weighted = - F.logsigmoid(beta * chosen_weights_normalized * logits)
-
-    # rejected_logits_weighted = - rejected_weights_normalized * F.logsigmoid(beta * logits_reverse)
-    # losses = -F.logsigmoid(beta * logits)
-    # losses = chosen_logits_weighted + rejected_logits_weighted
-    losses = chosen_logits_weighted
-
-    chosen_rewards = beta * (policy_chosen_logps - reference_chosen_logps).detach()
-    rejected_rewards = beta * (policy_rejected_logps - reference_rejected_logps).detach()
-
-    return losses, chosen_rewards, rejected_rewards
-
-
-
-
-def advantage_weighted_dpo_loss(policy_chosen_logps: torch.FloatTensor,
-             policy_rejected_logps: torch.FloatTensor,
-             reference_chosen_logps: torch.FloatTensor,
-             reference_rejected_logps: torch.FloatTensor,
-             chosen_weights,
-             rejected_weights,
-             beta: float,
-             reference_free: bool = False) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-    """Compute the DPO loss for a batch of policy and reference model log probabilities.
-    
-    Args:
-        policy_chosen_logps: Log probabilities of the policy model for the chosen responses. Shape: (batch_size,)
-        policy_rejected_logps: Log probabilities of the policy model for the rejected responses. Shape: (batch_size,)
-        reference_chosen_logps: Log probabilities of the reference model for the chosen responses. Shape: (batch_size,)
-        reference_rejected_logps: Log probabilities of the reference model for the rejected responses. Shape: (batch_size,)
-        beta: Temperature parameter for the DPO loss, typically something in the range of 0.1 to 0.5. We ignore the reference model as beta -> 0.
-        reference_free: If True, we ignore the _provided_ reference model and implicitly use a reference model that assigns equal probability to all responses.
-
-    Returns:
-        A tuple of three tensors: (losses, chosen_rewards, rejected_rewards).
-        The losses tensor contains the DPO loss for each example in the batch.
-        The chosen_rewards and rejected_rewards tensors contain the rewards for the chosen and rejected responses, respectively.
-    """
-    pi_logratios = policy_chosen_logps - policy_rejected_logps
-    ref_logratios = reference_chosen_logps - reference_rejected_logps
-
-    if reference_free:
-        ref_logratios = 0
-
-    logits = pi_logratios - ref_logratios
-    logits_reverse = ref_logratios - pi_logratios
-    # print(rejected_weights)
-
-    # chosen_weights_normalized = F.sigmoid(chosen_weights) / (F.sigmoid(chosen_weights) + F.sigmoid(rejected_weights))
-    # rejected_weights_normalized = F.sigmoid(rejected_weights) / (F.sigmoid(chosen_weights) + F.sigmoid(rejected_weights))
-    # print(chosen_weights, rejected_weights)
-
-    chosen_weights_normalized = 0.5 + F.sigmoid(chosen_weights - rejected_weights)
-    # rejected_weights_normalized = torch.abs((chosen_weights - rejected_weights) / torch.max(chosen_weights, rejected_weights))
-
-    # print(chosen_weights_normalized, rejected_weights_normalized)
-    # print(chosen_weights, rejected_weights)
-
-    chosen_weights_normalized[rejected_weights < chosen_weights] = 1
-    # rejected_weights_normalized[rejected_weights >= chosen_weights or rejected_weights<=0] = 0
-
-    # chosen_weights_normalized[rejected_weights < chosen_weights] = 0.8
-    # rejected_weights_normalized[rejected_weights >= 0] = 0
-    # print(chosen_weights_normalized, rejected_weights_normalized)
-
-
-    chosen_logits_weighted = - chosen_weights_normalized * F.logsigmoid(beta * logits)
-    # chosen_logits_weighted = - F.logsigmoid(beta * chosen_weights_normalized * logits)
-
-    # rejected_logits_weighted = - rejected_weights_normalized * F.logsigmoid(beta * logits_reverse)
-    # losses = -F.logsigmoid(beta * logits)
-    # losses = chosen_logits_weighted + rejected_logits_weighted
-    losses = chosen_logits_weighted
-
-    chosen_rewards = beta * (policy_chosen_logps - reference_chosen_logps).detach()
-    rejected_rewards = beta * (policy_rejected_logps - reference_rejected_logps).detach()
+    # Rewards (detached for logging/analysis)
+    chosen_rewards = beta * chosen_logratios.detach()
+    rejected_rewards = beta * rejected_logratios.detach()
 
     return losses, chosen_rewards, rejected_rewards
 
@@ -451,7 +282,6 @@ def rpo_loss(average_policy_chosen_logps: torch.FloatTensor,
 
 
 
-
 def _get_batch_logps(logits: torch.FloatTensor, labels: torch.LongTensor, average_log_prob: bool = False) -> torch.FloatTensor:
     """Compute the log probabilities of the given labels under the given logits.
 
@@ -509,6 +339,7 @@ def concatenated_inputs(batch: Dict[str, Union[List, torch.LongTensor]], has_wei
         except:
             concatenated_batch['chosen_average_weights'] = batch['chosen_weights']
     return concatenated_batch
+
 
 def concatenated_forward(model: nn.Module, batch: Dict[str, Union[List, torch.LongTensor]], has_weights=False) -> Tuple[torch.FloatTensor, torch.FloatTensor]:
         """Run the given model on the given batch of inputs, concatenating the chosen and rejected inputs together.

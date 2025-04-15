@@ -35,7 +35,7 @@ from transformers import (
     BitsAndBytesConfig,
 )
 from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
-from aco_utils import advantage_weighted_rejectratio_dpo_loss, advantage_weighted_rejectratio_with_average_dpo_loss, concatenated_forward, DataCollatorForSeq2SeqDPO
+from aco_utils import aco_loss, concatenated_forward, DataCollatorForSeq2SeqDPO
 from open_instruct.finetune import encode_sft_example
 
 
@@ -242,8 +242,8 @@ def parse_args():
     parser.add_argument(
         '--alpha',
         type=float,
-        default=0.0,
-        help='Alpha parameter for RPO loss. Default is 0.5.',
+        default=1.0,
+        help='Alpha parameter for ACO loss. Default is 1.',
     )
     parser.add_argument(
         '--use_paged_optimizer',
@@ -816,25 +816,14 @@ def main():
                     else:
                         average_reference_chosen_logps, average_reference_rejected_logps, reference_chosen_logps, reference_rejected_logps, chosen_weights, rejected_weights, average_weights = concatenated_forward(reference_model, batch, has_weights)
                 
+                """use standard DPO loss"""
                 # losses, _, _ = dpo_loss(
                 #     policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, beta=args.beta)
-                # losses, _, _ = advantage_weighted_dpo_loss(
-                #     policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, chosen_weights, rejected_weights, beta=args.beta)
                 
-                losses, _, _ = advantage_weighted_rejectratio_with_average_dpo_loss(
-                    policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, chosen_weights, rejected_weights, average_weights, beta=args.beta)
-                # losses, _, _ = simpo_loss(
-                #     average_policy_chosen_logps, average_policy_rejected_logps, average_reference_chosen_logps, average_reference_rejected_logps,
-                #     policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, beta=args.beta, alpha=args.alpha)
-                # losses, _, _ = ipo_loss(
-                #     average_policy_chosen_logps, average_policy_rejected_logps, average_reference_chosen_logps, average_reference_rejected_logps,
-                #     policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, beta=args.beta, alpha=args.alpha)
-                # losses, _, _ = ropo_loss(
-                #     average_policy_chosen_logps, average_policy_rejected_logps, average_reference_chosen_logps, average_reference_rejected_logps,
-                #     policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, beta=args.beta, alpha=args.alpha)
-                # losses, _, _ = rpo_loss(
-                #     average_policy_chosen_logps, average_policy_rejected_logps, average_reference_chosen_logps, average_reference_rejected_logps,
-                #     policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, beta=args.beta, alpha=args.alpha)
+                """use ACO loss"""
+                losses, _, _ = aco_loss(
+                    policy_chosen_logps, policy_rejected_logps, reference_chosen_logps, reference_rejected_logps, chosen_weights, rejected_weights, average_weights, beta=args.beta, alpha=args.alpha)
+
                 # TODO: metric logging          
                 loss = losses.mean()
                 # We keep track of the loss at each logged step
