@@ -24,6 +24,72 @@ Repo for "<a href="https://arxiv.org/abs/2311.09278" target="_blank">Genius: A G
 - [2025/02/16] 🔥🔥🔥 Genius is under review !
 
 
+## 🔍 Core Implementation
+
+```python
+import torch
+import torch.nn.functional as F
+from typing import Tuple
+
+def aco_loss(
+    policy_chosen_logps: torch.FloatTensor,
+    policy_rejected_logps: torch.FloatTensor,
+    reference_chosen_logps: torch.FloatTensor,
+    reference_rejected_logps: torch.FloatTensor,
+    chosen_weights: torch.FloatTensor,
+    rejected_weights: torch.FloatTensor,
+    average_weights: torch.FloatTensor,
+    beta: float,
+    alpha: float = 1.0,
+    reference_free: bool = False
+) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+    """
+    Adaptive Comparison Optimization (ACO) Loss.
+
+    Args:
+        policy_chosen_logps (FloatTensor): Log-probs from policy model for chosen responses. Shape: (batch,)
+        policy_rejected_logps (FloatTensor): Log-probs from policy model for rejected responses. Shape: (batch,)
+        reference_chosen_logps (FloatTensor): Log-probs from reference model for chosen responses. Shape: (batch,)
+        reference_rejected_logps (FloatTensor): Log-probs from reference model for rejected responses. Shape: (batch,)
+        chosen_weights (FloatTensor): Preference weights for chosen responses.
+        rejected_weights (FloatTensor): Preference weights for rejected responses.
+        beta (float): Temperature parameter to scale loss sharpness.
+        alpha (float): Relaxation scaling factor in adaptive weighting.
+        reference_free (bool): If True, ignores reference model by assuming uniform logits.
+
+    Returns:
+        Tuple of (losses, chosen_rewards, rejected_rewards), each of shape (batch,)
+    """
+
+    if reference_free:
+        reference_chosen_logps = torch.zeros_like(policy_chosen_logps)
+        reference_rejected_logps = torch.zeros_like(policy_rejected_logps)
+
+    # Log-ratio between policy and reference
+    chosen_logratios = policy_chosen_logps - reference_chosen_logps
+    rejected_logratios = policy_rejected_logps - reference_rejected_logps
+
+    # Adaptive weighting based on preference gap
+    adjustment_factor = torch.max(
+        torch.tensor(1.0, device=chosen_logratios.device),
+        torch.exp(-(rejected_weights - chosen_weights) / alpha)
+    )
+    rejected_logratios_weighted = adjustment_factor * rejected_logratios
+
+    # Contrastive logit for sigmoid loss
+    logits = chosen_logratios - rejected_logratios_weighted
+
+    # Final ACO loss
+    losses = -F.logsigmoid(beta * logits)
+
+    # Reward estimates (for monitoring or training signal)
+    chosen_rewards = beta * chosen_logratios.detach()
+    rejected_rewards = beta * rejected_logratios.detach()
+
+    return losses, chosen_rewards, rejected_rewards
+```
+
+
 ## 🚀 Quick Start
 
 <!-- To implement the *foresight sampling*, you can use the following command
