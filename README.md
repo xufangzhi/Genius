@@ -91,26 +91,24 @@ def aco_loss(
 
 
 ## 🚀 Quick Start
-
-<!-- To implement the *foresight sampling*, you can use the following command
-
-```python
-# execute
-python xxx.py
-```
-
-To train the 
+<!-- 
+To implement the *foresight sampling*, you can use the following command
 
 ```python
 # execute
 python xxx.py
 ``` -->
 
-Stay tuned on the recent updates !
+To train the policy model with Advantage Calibrated Optimization (ACO) loss function, please refer to the following command:
+
+```bash
+# execute
+bash ./aco-training/scripts/aco_train_with_accelerate.sh
+```
 
 
 ## 📒 Note
-This work is still under review. We will open-source the model weights and the code.
+This work is still under review. We are open-sourcing the model weights and the code. The training scripts are based on [open-instruct](https://github.com/allenai/open-instruct) and the evaluation is supported and accelerated by [vLLM](https://docs.vllm.ai/en/latest/) engine.
 
 
 ## Citation
