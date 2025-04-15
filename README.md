@@ -91,13 +91,18 @@ def aco_loss(
 
 
 ## 🚀 Quick Start
-<!-- 
-To implement the *foresight sampling*, you can use the following command
+
+To implement the *foresight re-sampling*, you can first use the following command to conduct the stepwise self-exploration:
 
 ```python
-# execute
-python xxx.py
-``` -->
+python foresight-sampling/foresight_sampling_with_vllm.py --model_path <path_to_your_model> --data_path <path_to_your_queries> --output_path <path_to_your_output_file> --step_beam_size 2 --num_rollout 4 --num_foresight 4
+```
+
+After exploration, you can exploit and construct the preference data through resampling technique:
+
+```python
+python foresight-sampling/construct_foresight_preference_data.py --input_path <path_to_the_exploration_outputs> --output_path <path_to_output_data_file>
+```
 
 To train the policy model with Advantage Calibrated Optimization (ACO) loss function, please refer to the following command:
 

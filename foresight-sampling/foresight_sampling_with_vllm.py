@@ -181,7 +181,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type=str, required=True)
     parser.add_argument('--output_path', type=str, required=True)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--step_beam_size', type=int, default=4)
+    parser.add_argument('--step_beam_size', type=int, default=2)
     parser.add_argument('--num_rollout', type=int, default=4)
     parser.add_argument('--num_foresight', type=int, default=4)
     parser.add_argument('--record_process', type=bool, default=True)
