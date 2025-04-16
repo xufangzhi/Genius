@@ -137,6 +137,7 @@ If you find it helpful, please kindly cite our paper as well as the inference-ti
 }
 ```
 
+
 ```
 @article{xu2025phi,
   title={$\phi$-Decoding: Adaptive Foresight Sampling for Balanced Inference-Time Exploration and Exploitation},
