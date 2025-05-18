@@ -21,6 +21,7 @@ Repo for "<a href="https://arxiv.org/abs/2311.09278" target="_blank">Genius: A G
 
 
 ## 🔥 News
+- [2025/05/16] 🔥🔥🔥 Genius is accepted by ACL 2025 (Main Conference) !
 - [2025/05/01] 🔥🔥🔥 The model checkpoints are released in huggingface ! Please check it !
 - [2025/02/16] 🔥🔥🔥 Genius is under review !
 
