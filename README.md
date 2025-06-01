@@ -21,9 +21,8 @@ Repo for "<a href="https://arxiv.org/abs/2311.09278" target="_blank">Genius: A G
 
 
 ## 🔥 News
-- [2025/05/16] 🔥🔥🔥 Genius is accepted by ACL 2025 (Main Conference) !
+- [2025/05/15] 🔥🔥🔥 Genius is accepted by ACL 2025 (Main Conference) !
 - [2025/05/01] 🔥🔥🔥 The model checkpoints are released in huggingface ! Please check it !
-- [2025/02/16] 🔥🔥🔥 Genius is under review !
 
 
 ## 🔍 Core Implementation
@@ -123,7 +122,7 @@ bash ./aco-training/scripts/aco_train_with_accelerate.sh
 
 
 ## 📒 Note
-This work is still under review. We are open-sourcing the model weights and the code. The training scripts are based on [open-instruct](https://github.com/allenai/open-instruct) and the evaluation is supported and accelerated by [vLLM](https://docs.vllm.ai/en/latest/) engine.
+We are open-sourcing the model weights and the code. The training scripts are based on [open-instruct](https://github.com/allenai/open-instruct) and the evaluation is supported and accelerated by [vLLM](https://docs.vllm.ai/en/latest/) engine.
 
 
 ## Citation
